@@ -1,0 +1,301 @@
+---
+title: "Global Trends in Cancer Mortality: A Shiny App Exploration (1990-2019)"
+subtitle: "INFO 526 - Spring 2024 - Project Final"
+author: "VizMasters - Monica Tejaswi Kommareddy, Ajay, Miki, Kondapaneni Siva Rohit, Surya Vardhan Dama, Rohit Vatsava Kalakala"
+title-slide-attributes:
+  data-background-image: images/Title_page_02.jpeg
+  data-background-size: stretch
+  data-background-opacity: "0.7"
+  data-slide-number: none
+format:
+  revealjs:
+    theme:  ['data/customtheming.scss']
+    transition: slide
+    background-transition: fade
+    scrollable: true
+    logo: images/Logo.jpeg
+  
+editor: visual
+execute:
+  echo: false
+---
+
+```{r echo = FALSE}
+#| label: load-packages
+#| include: false
+
+# Load packages here
+pacman::p_load(tidyverse,
+               janitor,
+               scales,
+               gganimate,
+               here,
+               plotly,
+               knitr,
+               rnaturalearthdata,
+               rnaturalearth,
+               sf)
+
+```
+
+```{r}
+ #| label: setup
+ #| include: false
+# 
+# # Plot theme
+# ggplot2::theme_set(ggplot2::theme_minimal(base_size = 11))
+# 
+# # For better figure resolution
+# knitr::opts_chunk$set(
+#   fig.retina = 3, 
+#   dpi = 300, 
+#   fig.width = 6, 
+#   fig.asp = 0.618 
+#   )
+```
+
+```{r}
+#| label: load-data
+#| include: false
+# Load data here
+data(mtcars)
+mtcars$speed <- mtcars$hp / mtcars$wt
+
+data("penguins")
+```
+
+## INTRODUCTION
+
+::: incremental
+-   In the world of cancer research, there's a lot of information to sift through. Researchers are left to sort through the abundance of new cancer-related data collected daily.
+
+-   However, interpreting all this data to produce actionable insights that improve our understanding of and ability to combat cancer presents a significant challenge.
+
+-   Join us as we employ visualization techniques to delve into the intricate patterns of cancer-related deaths and their wide-ranging effects on mortality rates across the globe.
+:::
+
+## Project Approch:
+
+::: incremental
+-   We will use Shiny app , allowing users to get insights and explore the data based on specific criteria (e.g., Country,Year).
+
+-   We used Plotly to create an interactive world map that displays the percentage of the population affected by cancer.
+
+-   We use Plotly and gganimate to create both static and dynamic visualisations that illustrate the rise in cancer from 1990 to 2019.
+:::
+
+## Causes of Death
+
+::: panel-tabset
+#### Plot
+
+```{r echo = FALSE , fig.show='hold'}
+knitr::include_graphics("images/animated_plot1.gif")
+
+```
+
+#### Insights
+
+-   <small>The plot shows us various causes of death around the world from the year 1990 to the year 2019. Cardiovascular illness continues to be primary cause of death during the time period. It is closely followed by death by cancers.</small>
+
+-   <small>Certain viral diseases, like lower respiratory infections, are on the rise again. This suggests a changing pattern that could be influenced by aging populations and climate change. The data might show improvements in immunization rates and healthcare accessibility that have led to benefits in some areas.</small>
+:::
+
+## Death by Cancer
+
+::: panel-tabset
+#### Plot
+
+```{r echo = FALSE , fig.show='hold'}
+knitr::include_graphics("images/animated_plot2.gif")
+
+```
+
+#### Insights
+
+-   <small>The plot showcases deaths by different types of cancers around the world over the time period 1990-2019. Lung cancer consistently dominates as the leading cause of cancer deaths globally, indicating a persistent and significant public health challenge over the entire period from 1990 to 2019.</small>
+
+-   <small>Liver cancer exhibits an initial increase in mortality rates until the late 1990s, followed by a noticeable decline in the early 2000s, suggesting potential success in interventions or treatments targeting this specific cancer type.</small>
+
+-   <small>Mortality rates due to stomach cancer remain relatively constant throughout the observed period, contrasting with the overall increasing trend seen in other cancer types, emphasizing the need for targeted research and interventions to address this specific cancer's impact.</small>
+:::
+
+## Cancer by Age Group
+
+::: panel-tabset
+#### Plot
+
+```{r echo = FALSE}
+# Loading data
+
+neoplasm_data <- read_csv("data/07_number-of-people-with-cancer-by-age.csv")
+
+# Filtering the data for world and pivoting the data
+
+filtered_data <- neoplasm_data %>%
+  filter(Entity == "World") %>%
+  select(Year, ends_with("(Number)")) %>%
+  pivot_longer(
+    cols = -Year,
+    names_to = "age_group",
+    values_to = "prevalence",
+    names_pattern = "Prevalence - Neoplasms - Sex: Both - Age: (.*) \\(Number\\)"
+  )
+
+# Creating the plot
+
+plot_3 <- ggplot(filtered_data, aes(x = Year, y = prevalence / 1e6, color = age_group, group = age_group, text= paste("Year:", Year, "<br>Death Count:", prevalence))) +
+  geom_line() +
+  geom_point() +
+  scale_colour_viridis_d() +
+  scale_x_continuous(breaks = seq(min(filtered_data$Year), max(filtered_data$Year), by = 5)) +
+  scale_y_continuous(labels = label_number(suffix = "M")) +
+  labs(title = "Trends in Cancers Prevalence by Age Group around the world",
+       x = "Year",
+       y = "Number of People with Cancers") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "white", color = NA),
+        panel.background = element_rect(fill = "white", color = NA),
+        legend.title = element_text("Age Group"),
+        legend.position = NULL) 
+
+plotly_plot_3 <- ggplotly(plot_3, tooltip = "text") |>
+  layout(legend = list(orientation = "h",
+  y = -0.3, yanchor = "bottom", x = 0.5,
+  xanchor = "center", title = list(text = " Age Group ", x = 0.5)))
+
+plotly_plot_3
+```
+
+#### Insights
+
+-   <small>A notable inflection point is observed after the 2000s, particularly evident in the age group of 50-69 years, indicating a significant acceleration in mortality rates during this period.</small>
+
+-   <small>Mortality rates in both the under 5 and 5-14 age groups show striking similarity, suggesting comparable vulnerability to cancer-related causes within these younger age brackets.</small>
+
+-   <small>While both the 15-49 and 70+ age groups exhibit a consistent upward trend in mortality rates, they converge around 2010. However, following this convergence, the 70+ age group experiences a rapid increase, surpassing the 15-49 age group, highlighting the disproportionate burden of cancer-related mortality among older populations.</small>
+:::
+
+## Death Rate by Age Group
+
+::: panel-tabset
+#### Plot
+
+```{r echo = FALSE , fig.show='hold'}
+knitr::include_graphics("images/animated_plot3.gif")
+
+```
+
+#### Insights
+
+-   <small>Over the period spanning from 1990 to 2019, the 70+ age group emerges as the demographic with the highest contribution to cancer-related mortality, surpassing all other age groups.</small>
+
+-   <small>Notably, beginning from the early 2000s, both the 50-69 and 70+ age groups exhibit a discernible decline in mortality rates, signaling a positive shift in the trend of cancer-related deaths within these older age groups.</small>
+:::
+
+## Cancer Count per 100 People
+
+::: panel-tabset
+#### 1990
+
+```{r echo = FALSE}
+data <- read_csv("data/05_share-of-population-with-cancer-crude.csv")
+
+filtered_data <- data %>%
+  filter(Year == 1990) %>%
+  select(Entity, Year, Deaths_Neoplasms = "Current number of cases of neoplasms per 100 people, in both sexes aged all ages") %>%
+  mutate(Deaths_Neoplasms = round(Deaths_Neoplasms, 3))  
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+filtered_data <- filtered_data %>%
+  mutate(Entity = if_else(Entity == "Democratic Republic of Congo", "Democratic Republic of the Congo", Entity),
+         Entity = if_else(Entity == "Congo", "Republic of the Congo", Entity),
+         Entity = if_else(Entity == "Russia", "Russian Federation", Entity))
+
+world_data <- merge(world, filtered_data , by.x = "name_long", by.y = "Entity")
+
+p <- ggplot() +
+  geom_sf(data = world_data, aes(fill = Deaths_Neoplasms, text = paste("Region:", name_long, "<br>Deaths:", Deaths_Neoplasms)), color = "black", size = 0.5) +
+  scale_fill_gradient(low = "#fff7bc", high = "#cc4c02", name = NULL, labels = scales::label_number(suffix = "% ")) +
+  labs(title = "Count of cancer cases per 100 people in the population in 1990") +
+  theme_void() +
+  theme(
+    legend.position = NULL,
+    legend.title = element_blank(),
+  )
+
+p <- ggplotly(p, tooltip = "text", dynamicTicks = TRUE, highlight = "plotly_selected")
+
+p
+
+```
+
+#### 2019
+
+```{r echo = FALSE}
+data <- read_csv("data/05_share-of-population-with-cancer-crude.csv")
+
+filtered_data <- data %>%
+  filter(Year == 2019) %>%
+  select(Entity, Year, Deaths_Neoplasms = "Current number of cases of neoplasms per 100 people, in both sexes aged all ages") %>%
+  mutate(Deaths_Neoplasms = round(Deaths_Neoplasms, 3))  
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+filtered_data <- filtered_data %>%
+  mutate(Entity = if_else(Entity == "Democratic Republic of Congo", "Democratic Republic of the Congo", Entity),
+         Entity = if_else(Entity == "Congo", "Republic of the Congo", Entity),
+         Entity = if_else(Entity == "Russia", "Russian Federation", Entity))
+
+world_data <- merge(world, filtered_data , by.x = "name_long", by.y = "Entity")
+
+p <- ggplot() +
+  geom_sf(data = world_data, aes(fill = Deaths_Neoplasms, text = paste("Region:", name_long, "<br>Deaths:", Deaths_Neoplasms)), color = "black", size = 0.5) +
+  scale_fill_gradient(low = "#fff7bc", high = "#cc4c02", name = NULL, labels = scales::label_number(suffix = "% ")) +
+  labs(title = "Count of cancer cases per 100 people in the population in 2019") +
+  theme_void() +
+  theme(
+    legend.position = NULL,
+    legend.title = element_blank(),
+  )
+
+p <- ggplotly(p, tooltip = "text", dynamicTicks = TRUE, highlight = "plotly_selected")
+
+p
+
+```
+
+#### Insights
+
+-   <small>Over the observed period, the death rate due to cancer has climbed from 20 deaths per 100 individuals to 25 deaths per 100 individuals globally.</small>
+
+-   <small>Notably, countries such as Canada and America have witnessed a significant surge in their death rates, nearly doubling compared to the initial figures, thereby reaching approximately 8-9 deaths per 100 individuals.</small>
+
+-   <small>Conversely, India has experienced a much milder increase in death rates, with figures remaining relatively low, around 5 deaths per 100 individuals, indicating a notable disparity compared to Western countries.</small>
+
+-   <small>Romania exhibits a consistent death rate, hovering around 17 deaths per 100 individuals throughout the observed period, suggesting a stable trend amidst fluctuating global patterns.</small>
+:::
+
+## Shiny App Link
+
+<https://ajaykumarapp1.shinyapps.io/VizMasters/>
+
+## Conclusion
+
+-   <small>**Leading Causes and Interventions:** Lung cancer remains the primary cause of death globally, while declines in liver cancer mortality post-2000s suggest intervention successes. Stable mortality rates due to stomach cancer call for targeted research and interventions.</small>
+
+-   <small>**Global Increase in Cancer Mortality:** Overall, there's been a worrying rise in cancer-related deaths worldwide, with rates climbing from 20 to 25 deaths per 100 individuals.</small>
+
+-   <small>**Regional Disparities:** Canada and America have seen a significant surge in death rates, reaching nearly 8-9 deaths per 100 individuals, contrasting with India's lower rate of around 5 deaths per 100 individuals.</small>
+
+-   <small>**Age Group Dynamics:** The 70+ age group is most vulnerable, but positive shifts in mortality rates among older age cohorts suggest progress in prevention and treatment.</small>
+
+-   <small>**Inflection Points:** Since the 2000s, notable variations in mortality rates suggest significant changes in disease dynamics, highlighting the importance of advancing treatment procedures and research in the medical field.</small>
+
+## References
+
+-   Title background image: <https://www.htworld.co.uk/news/research-news/injectible-gel-developed-to-deliver-cancer-drugs-for-solid-tumours/>
+-   Taken reference for shiny from : <https://shiny.posit.co/r/getstarted/build-an-app/reactive-flow/ui-inputs.html>
+-   Datasets taken from: <https://ourworldindata.org/cancer>
+
+## {transition="convex-in zoom-out"}
+![](images/thankyou.png){style="width:100%;height:100%;"}

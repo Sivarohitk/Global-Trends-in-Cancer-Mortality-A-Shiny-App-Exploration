@@ -1,0 +1,527 @@
+---
+title: "Global Trends in Cancer Mortality: A Shiny App Exploration (1990-2019)"
+subtitle: "INFO 526 - Project Final"
+author: 
+  - name: "VizMasters - Monica, Ajay, Miki, SRK, Surya and Rohit"
+    affiliations:
+      - name: "School of Information, University of Arizona"
+description: "Analyze : Cancers - leading Cause of death globally"
+format:
+   html:
+    code-tools: true
+    code-overflow: wrap
+    embed-resources: true
+editor: visual
+execute:
+  warning: false
+  echo: false
+---
+
+In the world of cancer research, there's a lot of information to sift through. Researchers are left to sort through the abundance of new cancer-related data collected daily. However, interpreting all this data to produce actionable insights that improve our understanding of and ability to combat cancer presents a significant challenge. Welcome to "Cancer" presented by VizMasters. Join us as we employ visualization techniques to delve into the intricate patterns of cancer-related deaths and their wide-ranging effects on mortality rates across the globe.
+
+Cancer continues to be a significant challenge for global health, impacting mortality rates and quality of life across the world. In 2022 alone, an estimated 9.7 million cancer-related deaths occurred, accompanied by 20 million new cases worldwide. Despite remarkable strides in understanding and managing cancer, the relentless rise in global mortality rates persists unabated. Our project endeavors to tap into the extensive datasets available on cancer from <https://ourworldindata.org/cancer>, curated by Max Roser and Hannah Ritchie. By integrating diverse datasets, we seek to unravel the intricate patterns underlying cancer distribution and its multifaceted impacts on diverse populations.
+
+The project draws upon an array of CSV files obtained from the provided source, each offering valuable insights into cancer statistics. The datasets encompass a wide range of information, including annual counts of deaths attributed to various causes, specific cancer types, and their distribution across different age demographics. Additionally, the datasets provide data on cancer death rates, prevalence within the population, and trends over time and across regions, facilitating a comprehensive analysis of the impact of cancer on global mortality.
+
+As we explore the data further, we see that each dataset can help us discover new things and hidden patterns. Every bit of information we find brings us closer to understanding cancer better and how it affects people everywhere. Our understanding of the fight against cancer can be further enhanced by carefully examining this data using visual aids.
+
+As we set sail on this journey, our initial destination is the realm of mortality statistics. Here, we dive deep into the data to demonstrate the extent to which cancer affects the number of deaths worldwide. Utilizing an animated barplot, we dynamically illustrate how cancer affects lives across different countries from the years 1990 to 2019, capturing the evolving impact of this disease throughout history. We've visualized the animated barplot using the combination of ggplot2 and gganimate, to showcase the dynamic impact of cancer on the mortality rate across the world.
+
+```{r, echo = FALSE, message = FALSE, fig.width = 16}
+
+# Loading Packages
+
+library(tidyverse) 
+library(janitor)
+library(scales)
+library(gganimate)
+
+# Loading data
+
+data <- read_csv("data/01_annual-number-of-deaths-by-cause.csv")
+
+
+# Data Wrangling
+
+data <- data |> 
+  clean_names() |> 
+  rename( country = entity,
+          Meningitis = deaths_meningitis_sex_both_age_all_ages_number, 
+          Alzheimers =   deaths_alzheimers_disease_and_other_dementias_sex_both_age_all_ages_number,
+          Parkinsons = deaths_parkinsons_disease_sex_both_age_all_ages_number,
+          Nutritional_deficiencies = deaths_nutritional_deficiencies_sex_both_age_all_ages_number, 
+          Malaria = deaths_malaria_sex_both_age_all_ages_number, 
+          Drowning = deaths_drowning_sex_both_age_all_ages_number, 
+          Interpersonal_violence = deaths_interpersonal_violence_sex_both_age_all_ages_number,
+          Maternal_disorders = deaths_maternal_disorders_sex_both_age_all_ages_number, 
+          Hiv_aids =deaths_hiv_aids_sex_both_age_all_ages_number, 
+          Drug_use_disorders = deaths_drug_use_disorders_sex_both_age_all_ages_number, 
+          Tuberculosis = deaths_tuberculosis_sex_both_age_all_ages_number,
+          Cardiovascular_diseases = deaths_cardiovascular_diseases_sex_both_age_all_ages_number,
+          Lower_respiratory_infections = deaths_lower_respiratory_infections_sex_both_age_all_ages_number,
+          Neonatal_disorders = deaths_neonatal_disorders_sex_both_age_all_ages_number,
+          Alcohol_use_disorders = deaths_alcohol_use_disorders_sex_both_age_all_ages_number, Self_harm =
+          deaths_self_harm_sex_both_age_all_ages_number,
+          Exposure_to_forces_of_nature = deaths_exposure_to_forces_of_nature_sex_both_age_all_ages_number,
+          Diarrheal_diseases = deaths_diarrheal_diseases_sex_both_age_all_ages_number,
+          Environmental_heat_and_cold_exposure = deaths_environmental_heat_and_cold_exposure_sex_both_age_all_ages_number,
+          Cancers = deaths_neoplasms_sex_both_age_all_ages_number,
+          Conflict_and_terrorism = deaths_conflict_and_terrorism_sex_both_age_all_ages_number,
+          Diabetes_mellitus = deaths_diabetes_mellitus_sex_both_age_all_ages_number,
+          Kidney_disease = deaths_chronic_kidney_disease_sex_both_age_all_ages_number, 
+          Poisonings =
+          deaths_poisonings_sex_both_age_all_ages_number,
+          Protein_energy_malnutrition = deaths_protein_energy_malnutrition_sex_both_age_all_ages_number,
+          Road_injuries = deaths_road_injuries_sex_both_age_all_ages_number,
+          Respiratory_diseases = deaths_chronic_respiratory_diseases_sex_both_age_all_ages_number,
+          Liver_diseases = deaths_cirrhosis_and_other_chronic_liver_diseases_sex_both_age_all_ages_number,
+          Digestive_diseases = deaths_digestive_diseases_sex_both_age_all_ages_number,
+          Fire_heat_and_hot_substances = deaths_fire_heat_and_hot_substances_sex_both_age_all_ages_number,
+          Acute_hepatitis = deaths_acute_hepatitis_sex_both_age_all_ages_number,
+          Measles = deaths_measles_sex_both_age_all_ages_number 
+          )
+
+# Converting the data to longer format for ploting
+
+cleaned_data <- data |> 
+  select(country, year, Meningitis:last_col())|> 
+  pivot_longer( cols = Meningitis:last_col(), 
+                names_to = "causes_of_death", 
+                values_to = "deaths" )
+
+# Arranging the data
+
+cleaned_data_new <- cleaned_data |>
+  filter(country == "World") |>
+  arrange(year, desc(deaths)) |>
+  mutate(causes_of_death = factor(causes_of_death, 
+                                  levels = rev(unique(causes_of_death))))
+
+# Generating the plot
+
+plot1 <- ggplot(data = cleaned_data_new, aes(y = deaths / 1e6,
+                                             x = causes_of_death,
+                                             fill = if_else(causes_of_death == "Cancers", "Cancers", "Other"))) +
+
+geom_bar(stat = "identity", show.legend = FALSE) +
+  scale_fill_manual(values = c("Cancers" = "red", "Other" = "blue")) +
+  scale_y_continuous(labels = label_number(suffix = "M")) +
+  coord_flip() +
+  theme_minimal() +
+  labs(
+    title = "Causes of death around the world in the year: {frame_time}",
+    y = "Deaths",
+    x = "Causes of death"
+  ) +
+  transition_time(year)
+
+# Animating the plot
+
+# animated_plot1 <- animate(plot1, duration = 10,
+#                           fps = 3,
+#                           width = 800,
+#                           height = 600,
+#                           renderer = gifski_renderer())
+
+#Render the animation
+# 
+# anim_save("images/animated_plot1.gif", 
+#           animated_plot1, 
+#          width = 800, 
+#          height = 600, 
+#         fps = 3, 
+#         duration = 10)
+knitr::include_graphics("images/animated_plot1.gif")
+```
+
+### Analysis
+
+-   The plot shows us various causes of death around the world from the year 1990 to the year 2019. Cardiovascular illness continues to be primary cause of death during the time period. It is closely followed by death by cancers.
+
+-   Certain viral diseases, like lower respiratory infections, are on the rise again. This suggests a changing pattern that could be influenced by aging populations and climate change. The data might show improvements in immunization rates and healthcare accessibility that have led to benefits in some areas.
+
+As we delve deeper into our investigation, we surf through the diverse spectrum of cancer types impacting communities worldwide. Every kind of cancer has a distinct history that is shaped by a multitude of elements such as heredity, lifestyle, and environmental factors. Equipped with extensive data on prevalence rates, our mission is to uncover the intricate details surrounding the most prevalent forms of cancer.
+
+Examining these subtleties in greater detail aims to provide a thorough grasp of how distinct cancer types appear and disperse throughout different regions of the world, thereby supporting larger initiatives to fight this illness worldwide. We consider using a stacked bar plot to improve the visualization of how different types of cancer affect different regions. This kind of plot makes it easier to compare the overall number of cancer deaths across regions as well as display the distribution of cancer types within each region.
+
+```{r, echo = FALSE}
+
+# Loading Packages
+
+library(tidyverse) 
+library(janitor)
+library(scales)
+library(here)
+
+# Loading the data
+
+  data <- read_csv(here("data/02_total-cancer-deaths-by-type.csv"))
+  
+  # Data Wrangling
+  
+  data <- data |>
+    clean_names() |>
+    rename( country = entity,
+            liver_cancer = deaths_liver_cancer_sex_both_age_all_ages_number,
+            kidney_cancer = deaths_kidney_cancer_sex_both_age_all_ages_number,
+            lip_Oral_Cavity_cancer = deaths_lip_and_oral_cavity_cancer_sex_both_age_all_ages_number,
+            lung_cancer = deaths_tracheal_bronchus_and_lung_cancer_sex_both_age_all_ages_number,	
+            larynx_cancer = deaths_larynx_cancer_sex_both_age_all_ages_number,	
+            billary_tract_cancer = deaths_gallbladder_and_biliary_tract_cancer_sex_both_age_all_ages_number,	
+            skin_cancer = deaths_malignant_skin_melanoma_sex_both_age_all_ages_number,
+            leukemia = deaths_leukemia_sex_both_age_all_ages_number,	
+            hodgkin_lymphoma = deaths_hodgkin_lymphoma_sex_both_age_all_ages_number,	
+            multiple_myeloma = deaths_multiple_myeloma_sex_both_age_all_ages_number,	
+            other_neoplasms = deaths_other_neoplasms_sex_both_age_all_ages_number,	
+            breast_cancer = deaths_breast_cancer_sex_both_age_all_ages_number,	
+            prostate_cancer = deaths_prostate_cancer_sex_both_age_all_ages_number,	
+            thyroid_cancer = deaths_thyroid_cancer_sex_both_age_all_ages_number,	
+            stomach_cancer = deaths_stomach_cancer_sex_both_age_all_ages_number,	
+            bladder_cancer = deaths_bladder_cancer_sex_both_age_all_ages_number,	
+            uterine_cancer = deaths_uterine_cancer_sex_both_age_all_ages_number,	
+            ovarian_cancer = deaths_ovarian_cancer_sex_both_age_all_ages_number,	
+            cervical_cancer = deaths_cervical_cancer_sex_both_age_all_ages_number,
+            brain_cancer = deaths_brain_and_central_nervous_system_cancer_sex_both_age_all_ages_number,	
+            non_hodgkin_lymphoma = deaths_non_hodgkin_lymphoma_sex_both_age_all_ages_number,
+            pancreatic_cancer = deaths_pancreatic_cancer_sex_both_age_all_ages_number,	
+            esophageal_cancer = deaths_esophageal_cancer_sex_both_age_all_ages_number,	
+            testicular_cancer = deaths_testicular_cancer_sex_both_age_all_ages_number,	
+            nasopharynx_cancer = deaths_nasopharynx_cancer_sex_both_age_all_ages_number,	
+            other_pharynx_cancer = deaths_other_pharynx_cancer_sex_both_age_all_ages_number,
+            colon_and_rectum_cancer = deaths_colon_and_rectum_cancer_sex_both_age_all_ages_number,
+            non_melanoma_skin_cancer = deaths_non_melanoma_skin_cancer_sex_both_age_all_ages_number,
+            mesothelioma = deaths_mesothelioma_sex_both_age_all_ages_number
+            )
+  
+  cleaned_data <- data |>
+    select(country, year, liver_cancer:last_col())|>
+    pivot_longer( cols = liver_cancer:last_col(),
+                  names_to = "cancertype",
+                  values_to = "deaths" )
+
+   df_condition <- cleaned_data |>
+    filter(country == "World") |>
+    arrange(desc(deaths)) |>
+    mutate(cancertype = factor(cancertype,
+                                    levels = rev(unique(cancertype))))
+
+  #glimpse(df_condition)
+
+  # Generating the plot
+  # plot_02 <- ggplot(data = df_condition, aes(x = cancertype,y = deaths / 1e6 )) +
+  plot_02 <- ggplot(data = df_condition, aes(x = cancertype, y = deaths / 1e6 )) +
+  geom_bar(stat = "identity", fill = "blue") +
+    # geom_text(
+    #   aes(label = deaths),
+    #   position = position_dodge(width = 0.9),
+    #   hjust = -0.1,
+    #   size = 4
+    # ) +
+    # scale_y_continuous(labels = label_number(suffix = "M")) +
+    coord_flip() +
+    scale_y_continuous(labels = label_number(suffix = "M")) +
+    theme_minimal()+
+    # #theme(
+    #   #plot.background = element_rect(fill = "black"),
+    #   #plot.foreground = element_rect(fill = "white"),
+    #   #panel.grid.major = element_line(color = "black", size = 0.5),
+    #   #panel.grid.minor = element_line(color = "black", size = 0.25),
+    #   text = element_text(color = "white"),                 # Changes color of all text by default
+    #   axis.title = element_text(color = "white"),           # Specifically changes the axis titles
+    #   axis.text = element_text(color = "white"),            # Changes the axis tick text
+    #   plot.title = element_text(color = "white")
+    #   )
+    labs(
+      title = "Deaths by type of Cancers around the world in the year: {frame_time}",
+      y = "Deaths",
+      x = "Type of cancers") +
+      transition_time(year)
+
+# # Animating the plot
+# 
+# animated_plot2 <- animate(plot_02, duration = 10,
+#         fps = 3,
+#         width = 800,
+#         height = 600,
+#         renderer = gifski_renderer()) 
+# 
+# # Rendering the image
+# 
+# anim_save("images/animated_plot2.gif", 
+#           animated_plot2, 
+#          width = 800, 
+#           height = 600, 
+#          fps = 3, 
+#         duration = 10)
+knitr::include_graphics("images/animated_plot2.gif")
+```
+
+### Analysis
+
+-   The plot showcases deaths by different types of cancers around the world over the time period 1990-2019. Lung cancer consistently dominates as the leading cause of cancer deaths globally, indicating a persistent and significant public health challenge over the entire period from 1990 to 2019.
+
+-   Liver cancer exhibits an initial increase in mortality rates until the late 1990s, followed by a noticeable decline in the early 2000s, suggesting potential success in interventions or treatments targeting this specific cancer type.
+
+-   Mortality rates due to stomach cancer remain relatively constant throughout the observed period, contrasting with the overall increasing trend seen in other cancer types, emphasizing the need for targeted research and interventions to address this specific cancer's impact.
+
+We move on to the topic of demographics as we investigate further, realizing that age plays a critical role in the conflict against cancer. By carefully analyzing data unique to different age groups, we gain important insights into the societal groups most impacted by cancer-related deaths.
+
+We become more aware of how cancer affects various age groups by carefully and precisely examining the data. The age groups that are most affected by cancer-related mortality can be determined by using this analysis to spot trends and patterns. In the fight against cancer, every age group has a different story to tell, whether it is younger people dealing with a particular type of cancer or older adults facing other obstacles.
+
+By incorporating simple and effective line graphs, we not only highlight the age groups most impacted by cancer but also offer a way to track patterns over a three-decade period in a particular area. These visual aids are effective communicators because they make complex data easier to understand and show changes in the prevalence of cancer over time. We hope to increase awareness, promote action, and ultimately improve outcomes for people affected by cancer across all age groups by concentrating on age demographics.
+
+```{r, message=FALSE, echo=FALSE}
+# Loading Libraries
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(scales)
+library(plotly)
+
+# Load the data
+
+neoplasm_data <- read_csv("data/07_number-of-people-with-cancer-by-age.csv")
+
+# Filtering the data for world and pivoting the data
+
+filtered_data <- neoplasm_data %>%
+  filter(Entity == "World") %>%
+  select(Year, ends_with("(Number)")) %>%
+  pivot_longer(
+    cols = -Year,
+    names_to = "age_group",
+    values_to = "prevalence",
+    names_pattern = "Prevalence - Neoplasms - Sex: Both - Age: (.*) \\(Number\\)"
+  )
+
+# Creating the plot
+
+plot_3 <- ggplot(filtered_data, aes(x = Year, y = prevalence / 1e6, color = age_group, group = age_group, text= paste("Year:", Year, "<br>Number Of People:", prevalence))) +
+  geom_line() +
+  geom_point() +
+  scale_colour_viridis_d() +
+  scale_x_continuous(breaks = seq(min(filtered_data$Year), max(filtered_data$Year), by = 5)) +
+  scale_y_continuous(labels = label_number(suffix = "M")) +
+  labs(title = "Trends in Cancers Prevalence by Age Group around the world",
+       x = "Year",
+       y = "Number of People with Cancers") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "white", color = NA),
+        panel.background = element_rect(fill = "white", color = NA),
+        legend.title = element_text("Age Group"),
+        legend.position = NULL) 
+
+plotly_plot_3 <- ggplotly(plot_3, tooltip = "text") |>
+  layout(legend = list(orientation = "h", y = -0.3, yanchor = "bottom", x = 0.5, xanchor = "center", title = list(text = " Age Group ", x = 0.5)))
+
+plotly_plot_3
+
+```
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+
+# Loading Libraries
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(knitr)
+library(gganimate)
+
+# loading the data
+
+neoplasm_data <- read_csv("data/04_cancer-death-rates-by-age.csv") %>%
+    rename(
+      country = Entity,
+      year = Year,
+      "70+ years" = "Deaths - Neoplasms - Sex: Both - Age: 70+ years (Rate)",
+      "50-69 years" = "Deaths - Neoplasms - Sex: Both - Age: 50-69 years (Rate)",
+      "15-49 years" = "Deaths - Neoplasms - Sex: Both - Age: 15-49 years (Rate)",
+      "5-14 years" = "Deaths - Neoplasms - Sex: Both - Age: 5-14 years (Rate)",
+      "Under 5 years" = "Deaths - Neoplasms - Sex: Both - Age: Under 5 (Rate)"  
+    ) %>%
+    select(country, year, "70+ years", "50-69 years", "15-49 years", "5-14 years", "Under 5 years")
+
+filtered_data <- neoplasm_data %>%
+    filter(country == "World") %>%
+    pivot_longer(
+      cols = c(`70+ years`, `50-69 years`, `15-49 years`, `5-14 years`, `Under 5 years`),
+      names_to = "Age_Group",
+      values_to = "Death_Rate"
+    )
+
+# Create the horizontal bar chart
+plot_4 <- ggplot(filtered_data, aes(y = reorder(Age_Group, Death_Rate), x = Death_Rate, fill = Age_Group)) +
+  geom_bar(stat = "identity", position = "dodge", orientation = "y") +
+  scale_fill_viridis_d() +
+  labs(title = "Death Rates from Cancer for the age groups around the world: {frame_time}",
+       y = "Age Group",
+       x = "Death Rate per 100,000 People") +
+  theme_minimal() +
+  theme(axis.text.y = element_text(angle = 0, hjust = 1),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.box = "horizontal") +
+        transition_time(year)
+
+# # Animating the plot
+# 
+# animated_plot3 <- animate(plot_4, duration = 10,
+#         fps = 3,
+#         width = 800,
+#         height = 600,
+#         renderer = gifski_renderer())
+# 
+# # Rendering the image
+# 
+# anim_save("images/animated_plot3.gif", 
+#           animated_plot3, 
+#          width = 800, 
+#           height = 600, 
+#          fps = 3, 
+#         duration = 10)
+knitr::include_graphics("images/animated_plot3.gif")
+```
+
+### Analysis
+
+-   A notable inflection point is observed after the 2000s, particularly evident in the age group of 50-69 years, indicating a significant acceleration in mortality rates during this period.
+
+-   Mortality rates in both the under 5 and 5-14 age groups show striking similarity, suggesting comparable vulnerability to cancer-related causes within these younger age brackets.
+
+-   While both the 15-49 and 70+ age groups exhibit a consistent upward trend in mortality rates, they converge around 2010. However, following this convergence, the 70+ age group experiences a rapid increase, surpassing the 15-49 age group, highlighting the disproportionate burden of cancer-related mortality among older populations.
+
+-   Over the period spanning from 1990 to 2019, the 70+ age group emerges as the demographic with the highest contribution to cancer-related mortality, surpassing all other age groups.
+
+-   Notably, beginning from the early 2000s, both the 50-69 and 70+ age groups exhibit a discernible decline in mortality rates, signaling a positive shift in the trend of cancer-related deaths within these older age groups.
+
+Embarking on a journey to comprehend the global landscape of cancer prevalence, we are driven by the imperative to grasp the nuanced complexities of this pervasive disease. By delving into the incidence of cancer per 100 individuals, we gain insights that transcend mere numbers, offering a deeper understanding of how this disease impacts different populations and regions.
+
+We have successfully illustrated the incidence of each type of cancer in terms of cases per 100 individuals by employing a potent visualization technique: a color-gradient world map. Concerning cancer prevalence, this approach provides a thorough and easily understandable picture across various global regions.
+
+Using this method makes it simple to identify areas where particular cancer types are more common by providing a visual representation of the geographic distribution of cancer prevalence. The visualization is given more depth by the use of a color gradient, whereby lighter shades denote lower rates of prevalence and darker hues indicate higher rates.
+
+We can explore the global cancer landscape on this interactive world map, which offers a dynamic platform for gaining insights into regional variations and disparities in cancer burden.
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+# Loading libraries
+library(rnaturalearthdata)
+library(rnaturalearth)
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(readr)
+library(plotly)
+
+data <- read_csv("data/05_share-of-population-with-cancer-crude.csv")
+
+filtered_data <- data %>%
+  filter(Year == 1990) %>%
+  select(Entity, Year, Deaths_Neoplasms = "Current number of cases of neoplasms per 100 people, in both sexes aged all ages") %>%
+  mutate(Deaths_Neoplasms = round(Deaths_Neoplasms, 3))  
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+filtered_data <- filtered_data %>%
+  mutate(Entity = if_else(Entity == "Democratic Republic of Congo", "Democratic Republic of the Congo", Entity),
+         Entity = if_else(Entity == "Congo", "Republic of the Congo", Entity),
+         Entity = if_else(Entity == "Russia", "Russian Federation", Entity))
+
+world_data <- merge(world, filtered_data , by.x = "name_long", by.y = "Entity")
+
+p <- ggplot() +
+  geom_sf(data = world_data, aes(fill = Deaths_Neoplasms, text = paste("Region:", name_long, "<br>Deaths:", Deaths_Neoplasms)), color = "black", size = 0.5) +
+  scale_fill_gradient(low = "#fff7bc", high = "#cc4c02", name = NULL, labels = scales::label_number(suffix = "% ")) +
+  labs(title = "Count of cancer cases per 100 people in the population in 1990") +
+  theme_void() +
+  theme(
+    legend.position = NULL,
+    legend.title = element_blank(),
+  )
+
+p <- ggplotly(p, tooltip = "text", dynamicTicks = TRUE, highlight = "plotly_selected")
+
+p
+```
+
+```{r, message = FALSE, echo = FALSE, warning = FALSE}
+# Loading libraries
+library(rnaturalearthdata)
+library(rnaturalearth)
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(readr)
+library(plotly)
+
+data <- read_csv("data/05_share-of-population-with-cancer-crude.csv")
+
+filtered_data <- data %>%
+  filter(Year == 2019) %>%
+  select(Entity, Year, Deaths_Neoplasms = "Current number of cases of neoplasms per 100 people, in both sexes aged all ages") %>%
+  mutate(Deaths_Neoplasms = round(Deaths_Neoplasms, 3))  
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+filtered_data <- filtered_data %>%
+  mutate(Entity = if_else(Entity == "Democratic Republic of Congo", "Democratic Republic of the Congo", Entity),
+         Entity = if_else(Entity == "Congo", "Republic of the Congo", Entity),
+         Entity = if_else(Entity == "Russia", "Russian Federation", Entity))
+
+world_data <- merge(world, filtered_data , by.x = "name_long", by.y = "Entity")
+
+p1 <- ggplot() +
+  geom_sf(data = world_data, aes(fill = Deaths_Neoplasms, text = paste("Region:", name_long, "<br>Deaths:", Deaths_Neoplasms)), color = "black", size = 0.5) +
+  scale_fill_gradient(low = "#fff7bc", high = "#cc4c02", name = NULL, labels = scales::label_number(suffix = "% ")) +
+  labs(title = "Count of cancer cases per 100 people in the population in 2019") +
+  theme_void() +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+  )
+
+p1 <- ggplotly(p1, tooltip = "text", dynamicTicks = TRUE, highlight = "plotly_selected")
+
+p1
+```
+
+### Analysis
+
+-   Over the observed period, the death rate due to cancer has climbed from 20 deaths per 100 individuals to 25 deaths per 100 individuals globally.
+
+-   Notably, countries such as Canada and America have witnessed a significant surge in their death rates, nearly doubling compared to the initial figures, thereby reaching approximately 40 deaths per 100 individuals.
+
+-   Conversely, India has experienced a much milder increase in death rates, with figures remaining relatively low, around 5 deaths per 100 individuals, indicating a notable disparity compared to Western countries.
+
+Romania exhibits a consistent death rate, hovering around 17 deaths per 100 individuals throughout the observed period, suggesting a stable trend amidst fluctuating global patterns.
+
+### Conclusion
+
+-   **Leading Causes and Interventions:** Lung cancer remains the primary cause of death globally, while declines in liver cancer mortality post-2000s suggest intervention successes. Stable mortality rates due to stomach cancer call for targeted research and interventions.
+
+-   **Global Increase in Cancer Mortality:** Overall, there's been a worrying rise in cancer-related deaths worldwide, with rates climbing from 20 to 25 deaths per 100 individuals.
+
+-   **Regional Disparities:** Canada and America have seen a significant surge in death rates, reaching nearly 40 deaths per 100 individuals, contrasting with India's lower rate of around 5 deaths per 100 individuals.
+
+-   **Age Group Dynamics:** The 70+ age group is most vulnerable, but positive shifts in mortality rates among older age cohorts suggest progress in prevention and treatment.
+
+-   **Inflection Points:** Since the 2000s, notable variations in mortality rates suggest significant changes in disease dynamics, highlighting the importance of advancing treatment procedures and research in the medical field.
+
+In our endeavor to offer a comprehensive platform for exploring cancer prevalence data, we've meticulously crafted a Shiny app that integrates a range of interactive visualizations. This simple-to-use interface provides an entry point to explore the complex aspects of cancer prevalence in various nations, eras, and age classes.
+
+The app's initial plots, which offer insights into trends in cancer prevalence over time and across different regions, are its central component. Users can customize their analysis to focus on particular geographic regions and timeframes of interest by using dropdown menus to select countries and years. This level of customization empowers users to conduct targeted investigations and extract meaningful insights from the data.
+
+Furthermore, the inclusion of an age group dropdown menu enhances the app's analytical capabilities by allowing users to explore how cancer prevalence varies among different age demographics. By selecting specific age groups, users can uncover age-related trends and patterns, gaining deeper insights into the impact of age on cancer prevalence rates.
+
+Towards the end of the app, users encounter the interactive world map visualization, which offers a compelling visual representation of cancer prevalence on a global scale.
+
+<https://ajaykumarapp1.shinyapps.io/VizMasters/>
+
+Through the dynamic and user-friendly features of our Shiny app, we aim to democratize access to cancer prevalence data and empower users across diverse domains, including research, healthcare, and policymaking. By providing interactive capabilities such as customizable analyses by country, year, and age group, the app caters to researchers seeking to uncover nuanced trends and patterns in cancer prevalence. Healthcare professionals can utilize the app to inform clinical decision-making and public health interventions by visualizing cancer burden data in an accessible format. Similarly, policymakers can leverage the app to develop evidence-based policies and allocate resources effectively to address the challenges posed by cancer. Overall, our Shiny app serves as a collaborative platform for knowledge sharing and data-driven decision-making, contributing to global efforts to combat cancer and improve outcomes for affected individuals and communities.
+
+References:
+
+Taken reference for shiny from : <https://shiny.posit.co/r/getstarted/build-an-app/reactive-flow/ui-inputs.html>
+
+Datasets taken from: <https://ourworldindata.org/cancer>

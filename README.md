@@ -1,2 +1,6 @@
-# Global-Trends-in-Cancer-Mortality-A-Shiny-App-Exploration
-Developed a Shiny app to visualize global cancer mortality trends (1990-2019). Analyzed data using R, Tidyverse, and ggplot2. Created interactive visualizations (animated bar plots, maps) to reveal patterns by region, age, and cancer type, aiding public health insights.
+# project-final
+
+Final project repo for INFO 526 - Spring 2024.
+
+#### Disclosure:
+Derived from the original data viz course by Mine Çetinkaya-Rundel @ Duke University

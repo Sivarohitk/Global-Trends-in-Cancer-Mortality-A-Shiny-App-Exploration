@@ -1,0 +1,28 @@
+project:
+  type: website
+
+website:
+  title: "<img src='/images/Logo.jpeg' alt='' style='width: 2.6em; height: 2.2em; border-radius: 30%;'> <b>Global Trends in Cancer Mortality: A Shiny App Exploration (1990-2019)</b>"
+  navbar:
+    right:
+      - icon: github
+        href: https://github.com/INFO-526-S24/project-final # Needs to be changed to your project repo
+    left:
+      - text: Project
+        href: index.qmd
+      - text: Proposal
+        href: proposal.qmd
+      - text: Presentation
+        href: presentation.qmd
+      - text: About
+        href: about.qmd
+
+format:
+  html:
+    theme:
+      light: flatly
+      dark: darkly
+    toc: true
+
+execute:
+  freeze: auto
